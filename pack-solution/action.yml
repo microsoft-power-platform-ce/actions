@@ -45,7 +45,7 @@ runs:
         $version = $solutionXml.SelectSingleNode(
           "/ImportExportXml/SolutionManifest/Version"
         ).InnerText
-        Write-Host "::set-output name=solution-file"
+        Write-Host "::set-output name=solution-file::$($uniqueName)_$version.zip"
       shell: pwsh
     - uses: microsoft/powerplatform-actions/pack-solution@v0
       with:

@@ -1,0 +1,54 @@
+name: Pack Solution
+description: |
+  Calls microsoft/powerplatform-actions/pack-solution with the following
+  default values:
+  - solution-file: <Solution.UniqueName>_<Solution.Version>.zip
+  - solution-folder: solution
+  - solution-type: Managed
+  Provides an output of the solution-file
+inputs:
+  solution-file:
+    description: Path/filename of the local solution zip file
+    required: false
+  solution-folder:
+    default: solution
+    description: Target folder into which to unpack the solution.zip contents
+    required: false
+  solution-type:
+    default: Managed
+    description: 'Solution type to pack as: "Unmanaged", "Managed" or "Both"'
+    required: false
+outputs:
+  solution-file:
+    description: Path/filename of the local solution zip file
+    value: ${{ steps.get-solution-file.outputs.solution-file }}
+runs:
+  using: composite
+  steps:
+    - id: get-solution-file
+      run: |
+        If (-Not [string]::IsNullOrEmpty("${{ inputs.solution-file }}")
+        {
+          Write-Host `
+            "::set-output name=solution-file::${{ inputs.solution-file }}"
+          exit
+        }
+
+        [xml] $solutionXml = Get-Content (
+          Join-Path `
+            "${{ inputs.solution-folder }}" `
+            "Other/Solution.xml"
+        )
+        $uniqueName = $solutionXml.SelectSingleNode(
+          "/ImportExportXml/SolutionManifest/UniqueName"
+        ).InnerText
+        $version = $solutionXml.SelectSingleNode(
+          "/ImportExportXml/SolutionManifest/Version"
+        ).InnerText
+        Write-Host "::set-output name=solution-file"
+      shell: pwsh
+    - uses: microsoft/powerplatform-actions/pack-solution@v0
+      with:
+        solution-file: ${{ steps.get-solution-file.outputs.solution-file }}
+        solution-folder: ${{ inputs.solution-folder }}
+        solution-type: ${{ inputs.solution-type }}

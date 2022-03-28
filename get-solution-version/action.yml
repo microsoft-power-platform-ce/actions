@@ -1,0 +1,26 @@
+name: Get Solution Version
+description: Retrieves a solution's version from source control
+inputs:
+  solution-folder:
+    default: solution
+    description: Folder of the unpacked solution
+    required: false
+outputs:
+  solution-version:
+    description: Version of the solution in source control
+    value: ${{ steps.get-solution-version.outputs.solution-version }}
+runs:
+  using: composite
+  steps:
+    - id: get-solution-version
+      run: |
+        [xml] $solutionXml = Get-Content (
+          Join-Path `
+            "${{ inputs.solution-folder }}" `
+            "Other/Solution.xml"
+        )
+        $version = $solutionXml.SelectSingleNode(
+          "/ImportExportXml/SolutionManifest/Version"
+        ).InnerText
+        Write-Host "::set-output name=solution-version::$version"
+      shell: pwsh
